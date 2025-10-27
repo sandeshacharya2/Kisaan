@@ -1,0 +1,75 @@
+{% load static %}
+{% load i18n %}
+
+    
+<!DOCTYPE html>
+<html lang="ne">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      {% block title %}
+        {% trans "Customer Dashboard" %}
+      {% endblock %}
+    </title>
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+  </head>
+  <body class="bg-gray-100 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="w-full">
+      {% include 'accounts/customer_header.html' %}
+    </header>
+
+    <!-- Main Layout (Sidebar + Content) -->
+    <div class="flex flex-1">
+      <!-- Sidebar -->
+      {% include 'accounts/customer_sidebar.html' %}
+
+      <!-- Content -->
+        <main class="flex-1 p-4 sm:p-6 ml-0 lg:ml-72">
+        {% block content %}
+        {% endblock %}
+      </main>
+    </div>
+    </div>
+
+    {% include 'accounts/customer_footer.html' %}
+
+    <!-- Sidebar Script -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('sidebar')
+        const overlay = document.getElementById('sidebar-overlay')
+        const openBtn = document.getElementById('mobile-sidebar-toggle')
+        const closeBtn = document.getElementById('mobile-sidebar-close')
+      
+        // Open sidebar
+        if (openBtn && sidebar && overlay) {
+          openBtn.addEventListener('click', () => {
+            sidebar.classList.remove('-translate-x-full')
+            overlay.classList.remove('hidden')
+            document.body.classList.add('overflow-hidden')
+          })
+        }
+      
+        // Close sidebar
+        if (closeBtn && sidebar && overlay) {
+          closeBtn.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full')
+            overlay.classList.add('hidden')
+            document.body.classList.remove('overflow-hidden')
+          })
+        }
+      
+        // Close when clicking outside
+        if (overlay && sidebar) {
+          overlay.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full')
+            overlay.classList.add('hidden')
+            document.body.classList.remove('overflow-hidden')
+          })
+        }
+      })
+    </script>
+  </body>
+</html>

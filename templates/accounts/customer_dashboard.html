@@ -1,0 +1,416 @@
+{% extends "accounts/customer_base.html" %}
+{% load static %}
+{% load i18n %}
+
+   
+{% block title %}{% trans "Customer Dashboard" %}{% endblock %}
+
+{% block content %}
+
+
+  <!-- Main Content -->
+<main class="lg:ml-8">
+
+
+
+    <!-- Leafy Divider -->
+    <div class="flex justify-center items-center mt-2 mb-2">
+      <svg viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-8">
+        <path d="M10 16 Q 30 0, 60 16 Q 90 32, 110 16" stroke="#81c784" stroke-width="3" fill="none"/>
+        <ellipse cx="10" cy="16" rx="4" ry="8" fill="#43a047"/>
+        <ellipse cx="110" cy="16" rx="4" ry="8" fill="#43a047"/>
+      </svg>
+    </div>
+
+    <!-- Motivational Message -->
+    <div class="text-center text-[#1b5e20] font-semibold mb-10 text-lg tracking-wide">
+  {% trans "Hello, dear customer! Here you can browse products posted by farmers." %}
+</div>
+
+<div class="px-4 sm:px-6 mb-5">
+  <form method="get" 
+        class="flex flex-row items-center gap-2 bg-green-200 p-3 rounded-xl shadow-sm border border-green-200 flex-wrap">
+
+   <!-- Search Input -->
+    <input
+      type="text"
+      name="q"
+      id="search-input"
+      value="{{ query|default_if_none:'' }}"
+      placeholder="{% trans 'Search items like (e.g., Potato, Ginger, etc.)' %}"
+      class="flex-1 min-w-[150px] px-3 py-2 border border-green-300 rounded-lg shadow-sm 
+             focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 text-sm"
+      autocomplete="off"
+    />
+
+    <!-- Filter Button and Dropdown -->
+    <div class="relative">
+      <button type="button" id="filter-toggle" 
+              class="px-2 py-1.5 sm:px-4 sm:py-2.5 bg-green-600 text-white rounded-lg 
+                     hover:bg-green-700 transition-all duration-300 flex items-center gap-1 
+                     text-xs sm:text-sm shadow-md hover:shadow-lg">
+        ⚙️ {% trans "Filter" %}
+      </button>
+
+      <!-- Dropdown -->
+      <div id="filter-dropdown" 
+           class="hidden absolute right-0 mt-2 w-72 bg-white border border-green-300 rounded-lg shadow-xl 
+                  z-50 p-5 animate-fadeIn">
+        <label class="block mb-3 font-semibold text-green-800 text-sm">{% trans "Filter by:" %}</label>
+
+        <select id="filter-type" name="filter_type" 
+                class="w-full mb-4 border border-green-300 rounded px-3 py-2 text-sm 
+                       focus:outline-none focus:ring-2 focus:ring-green-400">
+          <option value="">{% trans "Select Filter" %}</option>
+          <option value="price" {% if filter_type == 'price' %}selected{% endif %}>{% trans "Price Range" %}</option>
+          <option value="date" {% if filter_type == 'date' %}selected{% endif %}>{% trans "Date Range" %}</option>
+          <option value="quantity" {% if filter_type == 'quantity' %}selected{% endif %}>{% trans "Quantity Range" %}</option>
+          <option value="distance" {% if filter_type == 'distance' %}selected{% endif %}>{% trans "Distance Range" %}</option>
+        </select>
+
+      {% comment %} Price Range Inputs --> {% endcomment %}
+        <div id="price-filter" class="hidden filter-inputs space-y-3">
+          <input type="number" name="min_price" placeholder="{% trans 'Minimum Price' %}" value="{{ request.GET.min_price }}" 
+                 class="w-full border border-green-300 rounded px-3 py-2 text-sm 
+                        focus:outline-none focus:ring-2 focus:ring-green-400" />
+          <input type="number" name="max_price" placeholder="{% trans 'Maximum Price' %}" value="{{ request.GET.max_price }}" 
+                 class="w-full border border-green-300 rounded px-3 py-2 text-sm 
+                        focus:outline-none focus:ring-2 focus:ring-green-400" />
+        </div>
+
+        <!-- Date Range Inputs -->
+        <div id="date-filter" class="filter-inputs hidden space-y-3">
+          <label class="block text-green-700 font-medium text-sm">{% trans "From" %}</label>
+          <input type="date" name="start_date" value="{{ request.GET.start_date }}" 
+                 class="w-full border border-green-300 rounded px-3 py-2 text-sm 
+                        focus:outline-none focus:ring-2 focus:ring-green-400" />
+          <label class="block text-green-700 font-medium text-sm">{% trans "To" %}</label>
+          <input type="date" name="end_date" value="{{ request.GET.end_date }}" 
+                 class="w-full border border-green-300 rounded px-3 py-2 text-sm 
+                        focus:outline-none focus:ring-2 focus:ring-green-400" />
+        </div>
+
+        <!-- Quantity Range Inputs -->
+        <div id="quantity-filter" class="filter-inputs hidden space-y-3">
+          <input type="number" name="min_quantity" placeholder="{% trans 'Minimum Quantity' %}" value="{{ request.GET.min_quantity }}" 
+                 class="w-full border border-green-300 rounded px-3 py-2 text-sm 
+                        focus:outline-none focus:ring-2 focus:ring-green-400" />
+          <input type="number" name="max_quantity" placeholder="{% trans 'Maximum Quantity' %}" value="{{ request.GET.max_quantity }}" 
+                 class="w-full border border-green-300 rounded px-3 py-2 text-sm 
+                        focus:outline-none focus:ring-2 focus:ring-green-400" />
+        </div>
+
+        <!-- Distance Range Inputs -->
+        <div id="distance-filter" class="filter-inputs hidden space-y-3">
+          <select id="distance-option" name="distance_filter" 
+                  class="w-full border border-green-300 rounded px-3 py-2 mb-3 text-sm 
+                         focus:outline-none focus:ring-2 focus:ring-green-400">
+            <option value="nearest" {% if request.GET.distance_filter == 'nearest' %}selected{% endif %}>{% trans "Nearest" %}</option>
+            <option value="farthest" {% if request.GET.distance_filter == 'farthest' %}selected{% endif %}>{% trans "Farthest" %}</option>
+            <option value="enter_range" {% if request.GET.distance_filter == 'enter_range' %}selected{% endif %}>{% trans "Enter Range" %}</option>
+          </select>
+
+          <!-- Show only if Enter Range is selected -->
+          <div id="enter-range-inputs" class="hidden space-y-3">
+            <div class="flex gap-2 items-center">
+              <input type="number" step="any" name="min_distance" placeholder="{% trans 'Min Distance' %}" value="{{ request.GET.min_distance }}" 
+                     class="flex-grow border border-green-300 rounded px-3 py-2 text-sm 
+                            focus:outline-none focus:ring-2 focus:ring-green-400" />
+              <select name="distance_unit" 
+                      class="w-24 border border-green-300 rounded px-3 py-2 text-sm 
+                             focus:outline-none focus:ring-2 focus:ring-green-400">
+                <option value="km" {% if request.GET.distance_unit == 'km' %}selected{% endif %}>km</option>
+                <option value="meter" {% if request.GET.distance_unit == 'meter' %}selected{% endif %}>meter</option>
+              </select>
+            </div>
+            <div>
+              <input type="number" step="any" name="max_distance" placeholder="{% trans 'Max Distance' %}" value="{{ request.GET.max_distance }}" 
+                     class="w-full border border-green-300 rounded px-3 py-2 text-sm 
+                            focus:outline-none focus:ring-2 focus:ring-green-400" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Apply Filters Button -->
+        <button type="submit" 
+                class="mt-4 w-full sm:w-auto bg-green-600 text-white rounded-lg py-2.5 
+                       hover:bg-green-700 transition-all duration-300 shadow-md hover:shadow-lg">
+          {% trans "Apply Filters" %}
+        </button>
+      </div>
+    </div>
+
+    <!-- Search Button -->
+    <button
+      type="submit"
+      class="px-2 py-1.5 sm:px-4 sm:py-2.5 bg-green-600 text-white rounded-lg 
+             hover:bg-green-700 transition-all duration-300 flex items-center gap-1 
+             text-xs sm:text-sm shadow-md hover:shadow-lg"
+    >
+      🔍 {% trans "Search" %}
+    </button>
+  </form>
+</div>
+
+
+    <!-- Product Cards Container (for AJAX replacement) -->
+<div id="products-container">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {% if products %}
+          {% for product in products %}
+        <div class="bg-gradient-to-br from-green-50 via-green-150 to-green-200 rounded-xl border border-green-700 shadow-md hover:shadow-2xl hover:-translate-y-1 duration-300 transition p-0 flex flex-col overflow-hidden">
+              <!-- Farmer Info -->
+          <div class="flex items-center gap-3 bg-green-200 px-4 py-3 border-b border-green-200 rounded-t-lg">
+                <!-- Farmer Profile Picture -->
+                <div class="flex flex-col items-center">
+                  
+                {% if product.farmer.profile_picture %}
+                  <a href="{{ product.farmer.profile_picture.url }}" target="_blank" class="block">
+                    <img src="{{ product.farmer.profile_picture.url }}"
+                         alt="{% trans 'Farmer Picture' %}"
+                         class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full object-cover border-2 border-emerald-400 shadow-sm hover:scale-105 transition" />
+                  </a>
+                {% else %}
+                    <a href="{% static 'default_profile.jpg' %}" target="_blank">
+                      <img src="{% static 'default_profile.jpg' %}"
+                           alt="{% trans 'Default Picture' %}"
+                           class="w-14 h-14 rounded-full object-cover border-2 border-green-400 shadow-sm" />
+                    </a>
+                  {% endif %}
+
+                  <!-- Rating Stars as Clickable Link -->
+                  <a href="{% url 'submit-farmer-review' product.farmer.id %}"
+                     class="flex mt-1 text-yellow-500 text-xs hover:scale-110 transition">
+                    {% for i in "12345" %}
+                      {% if i|add:"0" <= product.farmer_avg_rating %}
+                        ⭐
+                      {% elif i|add:"-0.5" <= product.farmer_avg_rating %}
+                        ⭐️
+                      {% else %}
+                        ☆
+                      {% endif %}
+                    {% endfor %}
+                  </a>
+                </div>
+
+                <!-- Farmer Details -->
+                <div class="flex flex-col">
+                  <span class="font-semibold text-green-900 text-base flex items-center gap-1">
+                  <a href="{% url 'farmer_detail' product.farmer.id %}" 
+                       class="font-semibold text-green-900 text-base flex items-center gap-1">
+                      👨‍🌾 {{ product.farmer.user.first_name }} {{ product.farmer.user.last_name }}
+                    </a>
+                  </span>
+                  <span class="text-xs text-green-700">@{{ product.farmer.user.username }}</span>
+                  <span class="text-xs text-green-600 mt-1">
+                    📅 {% trans "Posted on" %}: {{ product.date_posted|date:"Y-m-d" }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Product Image -->
+              {% if product.image %}
+                <a href="{{ product.image.url }}" target="_blank">
+                  <img src="{{ product.image.url }}" alt="{{ product.sub_category }}" class="w-full h-40 sm:h-48 object-cover" />
+                </a>
+              {% else %}
+                <img src="{% static 'default_product.png' %}" alt="{% trans 'Default Product' %}" class="w-full h-48 object-cover" />
+              {% endif %}
+
+              <!-- Product Details -->
+              <div class="p-5 space-y-2 text-green-900">
+                <h3 class="text-lg font-bold text-green-800 flex items-center gap-2">
+                  🌾 {{ product.sub_category }}
+                </h3>
+
+                <div class="flex flex-wrap gap-2 text-sm text-green-700">
+                  <span class="bg-green-100 px-2 py-1 rounded-full text-xs font-medium border border-green-300">
+                    🧮 {% trans "Quantity" %}: {{ product.quantity }} {{ product.unit }}
+                  </span>
+                  <span class="bg-green-100 px-2 py-1 rounded-full text-xs font-medium border border-green-300">
+                    💵 {% trans "Price per unit" %}: Rs. {{ product.price }}
+                  </span>
+                  <span class="bg-green-100 px-2 py-1 rounded-full text-xs font-medium border border-green-300">
+                    🧾 {% trans "Total" %}: Rs. {{ product.total_price }}
+                  </span>
+                </div>
+                <div>
+                    <p class="mt-2 text-green-700 font-medium">📝 {% trans "Description" %}: {{ product.description }}</p>
+
+                </div>
+                <!-- ✅ FIXED: Use farmerprofile, not profile -->
+                <div class="text-sm mt-2 text-green-700 leading-relaxed">
+                  📍 <strong>{% trans "Location" %}</strong>: {{ product.farmer.user.farmerprofile.address }}, {{ product.farmer.user.farmerprofile.tole }},
+                  {% blocktrans with ward=product.farmer.user.farmerprofile.ward %}
+                    Ward No. {{ ward }}
+                  {% endblocktrans %}
+                </div>
+                <div>
+                  
+                </div>
+                <!-- Distance Display -->
+                {% if product.display_distance %}
+                  <div class="text-sm mt-2 text-green-800 font-semibold flex items-center gap-1">
+                    📍 <strong>{% trans "Distance" %}:</strong> {{ product.display_distance }}
+                  </div>
+                {% else %}
+                  <div class="text-sm mt-2 text-red-600 font-semibold">
+                    ⚠️ {% trans "Distance not available" %}
+                  </div>
+                {% endif %}
+
+                <a href="{% url 'view_farmer_location' product.farmer.id %}" class="text-blue-600 underline text-sm">
+                  👨‍🌾 {% trans "View farmer's location" %}
+                </a>
+
+                <div class="mt-4 flex justify-between gap-3">
+                  <a href="{% url 'payments:payment_request' product.id %}" 
+                     class="flex-1 text-center text-sm font-semibold bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                    🛒 {% trans "Buy Now" %}
+                  </a>
+
+                  <a href="{% url 'chat:start_chat' product.id %}" 
+                     class="flex-1 text-center text-sm font-semibold bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                    💬 {% trans "Chat with farmer" %}
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-center col-span-full text-green-600">{% trans "No products are currently available." %}</p>
+        {% endif %}
+      </div>
+
+      <!-- Pagination Controls -->
+      <div class="mt-8 flex flex-wrap justify-center items-center gap-2 sm:gap-3 text-green-800 font-semibold">
+        {% if products.has_previous %}
+          <a href="?page={{ products.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if filter_type %}&filter_type={{ filter_type }}{% endif %}{% if distance_filter %}&distance_filter={{ distance_filter }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.min_quantity %}&min_quantity={{ request.GET.min_quantity }}{% endif %}{% if request.GET.max_quantity %}&max_quantity={{ request.GET.max_quantity }}{% endif %}{% if request.GET.min_distance %}&min_distance={{ request.GET.min_distance }}{% endif %}{% if request.GET.max_distance %}&max_distance={{ request.GET.max_distance }}{% endif %}{% if request.GET.distance_unit %}&distance_unit={{ request.GET.distance_unit }}{% endif %}" class="px-3 py-1 rounded border border-green-400 hover:bg-green-200">
+            &laquo; {% trans "Previous" %}
+          </a>
+        {% endif %}
+
+        <span class="px-3 py-1 rounded border border-green-400 bg-green-100">
+          {% trans "Page" %} {{ products.number }} {% trans "of" %} {{ products.paginator.num_pages }}
+        </span>
+
+        {% if products.has_next %}
+          <a href="?page={{ products.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if filter_type %}&filter_type={{ filter_type }}{% endif %}{% if distance_filter %}&distance_filter={{ distance_filter }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.min_quantity %}&min_quantity={{ request.GET.min_quantity }}{% endif %}{% if request.GET.max_quantity %}&max_quantity={{ request.GET.max_quantity }}{% endif %}{% if request.GET.min_distance %}&min_distance={{ request.GET.min_distance }}{% endif %}{% if request.GET.max_distance %}&max_distance={{ request.GET.max_distance }}{% endif %}{% if request.GET.distance_unit %}&distance_unit={{ request.GET.distance_unit }}{% endif %}" class="px-3 py-1 rounded border border-green-400 hover:bg-green-200">
+            {% trans "Next" %} &raquo;
+          </a>
+        {% endif %}
+      </div>
+</div>
+    </main>
+  </div>
+
+
+ <script>
+    function toggleDetails() {
+      const details = document.getElementById('details');
+      details.classList.toggle('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const productsContainer = document.getElementById('products-container');
+      const searchInput = document.getElementById('search-input');
+
+      let debounceTimeout;
+
+      searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimeout);
+
+        const query = searchInput.value.trim();
+
+        debounceTimeout = setTimeout(() => {
+          const url = new URL(window.location);
+          url.searchParams.set('q', query);
+          // Preserve other filters
+          fetch(url.toString(), {
+            headers: { 'x-requested-with': 'XMLHttpRequest' }
+          })
+          .then(res => res.text())
+          .then(html => {
+            
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const newProducts = doc.getElementById('products-container');
+  if (newProducts && productsContainer) {
+    productsContainer.innerHTML = newProducts.innerHTML;
+  }
+});
+          
+          
+        }, 300);
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const filterToggleBtn = document.getElementById("filter-toggle");
+      const filterDropdown = document.getElementById("filter-dropdown");
+      const filterTypeSelect = document.getElementById("filter-type");
+      const filterInputs = document.querySelectorAll(".filter-inputs");
+      const distanceOption = document.getElementById("distance-option");
+      const enterRangeInputs = document.getElementById("enter-range-inputs");
+
+      function updateFilterInputs() {
+        filterInputs.forEach(input => input.classList.add("hidden"));
+        const selected = filterTypeSelect.value;
+
+        if (selected === "price") {
+          document.getElementById("price-filter").classList.remove("hidden");
+        } else if (selected === "date") {
+          document.getElementById("date-filter").classList.remove("hidden");
+        } else if (selected === "quantity") {
+          document.getElementById("quantity-filter").classList.remove("hidden");
+        } else if (selected === "distance") {
+          document.getElementById("distance-filter").classList.remove("hidden");
+          updateDistanceInputs();
+        }
+      }
+
+      function updateDistanceInputs() {
+        if (distanceOption.value === "enter_range") {
+          enterRangeInputs.classList.remove("hidden");
+        } else {
+          enterRangeInputs.classList.add("hidden");
+        }
+      }
+
+      filterTypeSelect.addEventListener("change", updateFilterInputs);
+      distanceOption.addEventListener("change", updateDistanceInputs);
+
+      updateFilterInputs();
+
+      filterToggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        filterDropdown.classList.toggle("hidden");
+      });
+
+      document.addEventListener("click", function(e) {
+        if (!filterDropdown.contains(e.target) && e.target !== filterToggleBtn) {
+          filterDropdown.classList.add("hidden");
+        }
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const sidebarToggle = document.getElementById("sidebar-toggle");
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebar-overlay");
+
+      sidebarToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("open");
+        overlay.classList.toggle("active");
+      });
+
+      overlay.addEventListener("click", () => {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("active");
+      });
+    });
+    
+  </script>
+
+
+{% endblock %}
